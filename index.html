@@ -285,8 +285,10 @@
         passBombBtn.style.display = 'none';
         nextRoundBtn.style.display = 'block';
 
-        if (currentRound >= MAX_ROUNDS) {
+        if (currentRound === MAX_ROUNDS) {
             nextRoundBtn.textContent = 'Show Winner';
+        } else {
+            nextRoundBtn.textContent = 'Next Round';
         }
     }
 
@@ -349,5 +351,6 @@
 </script>
 </body>
 </html>
+
 
 
