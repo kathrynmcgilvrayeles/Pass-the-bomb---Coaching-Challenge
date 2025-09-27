@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pass the Bomb - Coaching Challenge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        /* Brand Colours */
+        :root {
+            --brand-red: #E20000;
+            --brand-black: #000000;
+            --brand-white: #FFFFFF;
+            --brand-grey-light: #F5F5F5;
+            --brand-grey-mid: #E6E6E6;
+            --brand-grey-dark: #B3B3B3;
+            --brand-grey-text: #4D4D4D;
+        }
+
+        html {
+            font-size: 110%; /* Increase base font size for overall scaling */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--brand-grey-light);
+            color: var(--brand-black);
+            text-align: center;
+            padding: 20px;
+            overflow: hidden; /* Hide confetti overflow */
+        }
+
+        .container {
+            background-color: var(--brand-white);
+            padding: 50px; /* Increased padding */
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 850px; /* Increased max-width */
+            border-top: 8px solid var(--brand-red);
+            position: relative;
+        }
+
+        h1 {
+            color: var(--brand-black);
+            font-weight: 700;
+            margin-top: 0;
+            font-size: 3rem;
+        }
+
+        h2 {
+             color: var(--brand-black);
+            font-weight: 700;
+            margin-top: 0;
+            font-size: 2.5rem;
+        }
+        
+        p {
+            color: var(--brand-grey-text);
+            font-size: 1.5rem;
+            line-height: 1.6;
+        }
+
+        /* --- Screens --- */
+        #player-setup, #game-board, #winner-screen {
+             display: none; /* Hidden by default */
+        }
+        #player-setup { display: block; } /* Initially visible */
+        
+        #player-list {
+            list-style: none;
+            padding: 0; margin: 20px 0;
+            display: flex; flex-wrap: nowrap; /* Prevents wrapping */
+            justify-content: flex-start; /* Aligns items to the left */
+            gap: 10px;
+            overflow-x: auto; /* Adds horizontal scroll if needed */
+            padding-bottom: 10px; /* Space for the scrollbar */
+        }
+
+        #player-list li {
+            background-color: var(--brand-grey-mid);
+            padding: 8px 15px; border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.3rem;
+            white-space: nowrap; /* Prevent player names from wrapping */
+        }
+        
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        #playerNameInput {
+            flex-grow: 1; padding: 12px;
+            border-radius: 8px; border: 2px solid var(--brand-grey-mid);
+            font-size: 1.3rem;
+        }
+        #playerNameInput:focus { outline: none; border-color: var(--brand-red); }
+
+        .btn {
+            color: var(--brand-white); border: none;
+            padding: 12px 25px; font-size: 1.3rem;
+            font-weight: 600; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-red { background-color: var(--brand-red); }
+        .btn-red:hover { background-color: #c00; }
+        .btn-dark { background-color: var(--brand-grey-text); }
+        .btn-dark:hover { background-color: var(--brand-black); }
+        .btn:disabled { background-color: var(--brand-grey-dark); cursor: not-allowed; }
+
+        #currentPlayerDisplay {
+            background-color: var(--brand-red); color: var(--brand-white);
+            padding: 15px; border-radius: 12px; margin: 20px auto;
+        }
+        #currentPlayerDisplay h2 { margin: 0; font-size: 2.8rem; color: var(--brand-white); }
+        #currentPlayerDisplay p { margin: 0; font-size: 1.5rem; color: var(--brand-white); opacity: 0.9; }
+
+        #prompt { font-size: 2rem; min-height: 120px; font-weight: 600; }
+        #bomb-visual { font-size: 7em; margin: 10px 0; }
+        .shake { animation: shake 0.5s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-3px, 2px); } 100% { transform: translate(1px, 1px); } }
+        #timer { display: none; } /* Timer is now hidden */
+
+        .instructions {
+            background-color: var(--brand-grey-light);
+            border-left: 4px solid var(--brand-red);
+            padding: 15px 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        .instructions p {
+            margin: 5px 0;
+            font-size: 1.3rem;
+            line-height: 1.5;
+        }
+
+        /* --- Winner Screen & Confetti --- */
+        #winner-screen h1 { color: var(--brand-red); }
+        #winner-name { font-size: 4rem; margin: 10px 0 30px; }
+
+        .confetti {
+            position: absolute; width: 10px; height: 20px;
+            background-color: var(--brand-red); opacity: 0;
+            top: -20px;
+            animation: fall 5s linear infinite;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="player-setup" class="container">
+    <h1>Pass the Bomb<br>Coaching Challenge</h1>
+    <div class="instructions">
+        <p><strong>How to Play:</strong> A coaching scenario will appear. When your name is on screen, you have the bomb! Quickly suggest how Copilot could help, then click 'Pass the Bomb'.</p>
+        <p>The player holding the bomb when it goes off loses the round. The game lasts for <strong>5 rounds</strong>, and the player with the fewest losses wins!</p>
+    </div>
+    <p>Enter player names below to begin.</p>
+    <div class="input-group">
+        <input type="text" id="playerNameInput" placeholder="e.g., Alex">
+        <button id="addPlayerBtn" class="btn btn-dark">Add Player</button>
+    </div>
+    <ul id="player-list"></ul>
+    <button id="startGameBtn" class="btn btn-red" disabled>Start Game</button>
+</div>
+
+<div id="game-board" class="container">
+    <div id="currentPlayerDisplay">
+        <p>You have the bomb! (Round <span id="round-counter">1</span>/5)</p>
+        <h2 id="currentPlayerName">Player</h2>
+    </div>
+    <p id="prompt">Here is the challenge...</p>
+    <div id="bomb-visual">💣</div>
+    <div id="timer"></div>
+    <button id="passBombBtn" class="btn btn-red">Pass the Bomb</button>
+    <button id="nextRoundBtn" class="btn btn-dark" style="display: none;">Next Round</button>
+</div>
+
+<div id="winner-screen" class="container">
+    <h1>Congratulations!</h1>
+    <p>The winner is...</p>
+    <h2 id="winner-name"></h2>
+    <button id="playAgainBtn" class="btn btn-red">Play Again</button>
+</div>
+
+<script>
+    const playerSetupDiv = document.getElementById('player-setup');
+    const gameBoardDiv = document.getElementById('game-board');
+    const winnerScreenDiv = document.getElementById('winner-screen');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const addPlayerBtn = document.getElementById('addPlayerBtn');
+    const playerListUl = document.getElementById('player-list');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const currentPlayerNameH2 = document.getElementById('currentPlayerName');
+    const promptP = document.getElementById('prompt');
+    const bombVisualDiv = document.getElementById('bomb-visual');
+    const passBombBtn = document.getElementById('passBombBtn');
+    const nextRoundBtn = document.getElementById('nextRoundBtn');
+    const winnerNameH2 = document.getElementById('winner-name');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const roundCounterSpan = document.getElementById('round-counter');
+
+    let players = []; // Will be array of objects: { name: 'Alex', losses: 0 }
+    let currentPlayerIndex = 0;
+    let currentRound = 0;
+    const MAX_ROUNDS = 5;
+    let gameInterval;
+    let roundScenarios = [];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    const scenarios = [
+        "Stagnant sales pipeline growth.",
+        "Addressing a poor performance review.",
+        "Aspiring leader lacks skills.",
+        "Training completions are high, yet increase errors.",
+        "Negative customer survey feedback."
+    ];
+
+    function playExplosionSound() { /* ... unchanged ... */ }
+
+    function updatePlayerList() {
+        playerListUl.innerHTML = '';
+        players.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = p.name;
+            playerListUl.appendChild(li);
+        });
+        startGameBtn.disabled = players.length < 2;
+    }
+
+    function addPlayer() {
+        const name = playerNameInput.value.trim();
+        if (name && !players.some(p => p.name === name)) {
+            players.push({ name: name, losses: 0 });
+            playerNameInput.value = '';
+            updatePlayerList();
+        }
+        playerNameInput.focus();
+    }
+    
+    function startNewRound() {
+        currentRound++;
+        if (currentRound > MAX_ROUNDS) {
+            showWinner();
+            return;
+        }
+
+        roundCounterSpan.textContent = currentRound;
+        passBombBtn.style.display = 'block';
+        nextRoundBtn.style.display = 'none';
+        bombVisualDiv.textContent = '💣';
+        bombVisualDiv.classList.add('shake');
+
+        promptP.textContent = roundScenarios.pop(); // Use the next unique scenario for the round
+        // Shuffle players at start of each round for fairness
+        players.sort(() => Math.random() - 0.5);
+        currentPlayerIndex = 0;
+        updateCurrentPlayer();
+
+        const explosionTime = Math.floor(Math.random() * 15000) + 10000; // 10-25 seconds
+        const startTime = Date.now();
+        gameInterval = setInterval(() => {
+            if (Date.now() - startTime >= explosionTime) {
+                endRound();
+            }
+        }, 100);
+    }
+    
+    function endRound() {
+        clearInterval(gameInterval);
+        // playExplosionSound(); // Optional: can be noisy in a training room
+        bombVisualDiv.classList.remove('shake');
+        bombVisualDiv.textContent = '💥';
+        
+        const loser = players[currentPlayerIndex];
+        loser.losses++;
+        promptP.innerHTML = `<strong>BOOM!</strong> Time's up for <strong>${loser.name}</strong>!`;
+        
+        passBombBtn.style.display = 'none';
+        nextRoundBtn.style.display = 'block';
+
+        if (currentRound >= MAX_ROUNDS) {
+            nextRoundBtn.textContent = 'Show Winner';
+        }
+    }
+
+    function showWinner() {
+        gameBoardDiv.style.display = 'none';
+        winnerScreenDiv.style.display = 'block';
+
+        players.sort((a, b) => a.losses - b.losses);
+        const minLosses = players[0].losses;
+        const winners = players.filter(p => p.losses === minLosses);
+        winnerNameH2.textContent = winners.map(w => w.name).join(' & ');
+
+        createConfetti();
+    }
+    
+    function createConfetti() {
+        const confettiContainer = winnerScreenDiv;
+        for (let i = 0; i < 150; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = `${Math.random() * 100}%`;
+            confetti.style.animationDelay = `${Math.random() * 5}s`;
+            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            confettiContainer.appendChild(confetti);
+        }
+    }
+
+    function updateCurrentPlayer() {
+        currentPlayerNameH2.textContent = players[currentPlayerIndex].name;
+    }
+
+    function passBomb() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        updateCurrentPlayer();
+    }
+    
+    function resetGame() {
+        players = [];
+        currentRound = 0;
+        winnerScreenDiv.style.display = 'none';
+        playerSetupDiv.style.display = 'block';
+        updatePlayerList();
+        // Clear old confetti
+        document.querySelectorAll('.confetti').forEach(e => e.remove());
+    }
+
+    addPlayerBtn.addEventListener('click', addPlayer);
+    playerNameInput.addEventListener('keyup', (e) => e.key === 'Enter' && addPlayer());
+    startGameBtn.addEventListener('click', () => {
+        playerSetupDiv.style.display = 'none';
+        gameBoardDiv.style.display = 'block';
+        // Create a shuffled list of scenarios for this game session
+        roundScenarios = [...scenarios].sort(() => Math.random() - 0.5);
+        startNewRound();
+    });
+    passBombBtn.addEventListener('click', passBomb);
+    nextRoundBtn.addEventListener('click', startNewRound);
+    playAgainBtn.addEventListener('click', resetGame);
+
+</script>
+</body>
+</html>
+
+
